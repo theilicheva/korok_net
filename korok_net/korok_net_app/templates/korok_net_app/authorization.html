@@ -1,0 +1,57 @@
+{% extends 'korok_net_app/base.html' %}
+
+{% block title %}Авторизация | Корочки.есть{% endblock %}
+
+{% block content %}
+<section class="auth-layout">
+    <div class="container auth-grid">
+        <article class="auth-promo auth-promo--accent">
+            <span class="section-kicker">Вход</span>
+            <h1>Авторизуйтесь, чтобы открыть личный кабинет и продолжить работу с заявками.</h1>
+            <p>После входа пользователь получает доступ к своим обращениям и отзывам, а сотрудник — к административной панели.</p>
+            <div class="promo-points promo-points--stack">
+                <div>
+                    <strong>Личный кабинет</strong>
+                    <p>Все заявки, статусы и завершённые курсы собраны в одном разделе.</p>
+                </div>
+                <div>
+                    <strong>Быстрый доступ</strong>
+                    <p>Вход открывает нужный раздел сразу после проверки учётных данных.</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel panel--light auth-panel">
+            <div class="panel__header">
+                <span class="panel__label">Авторизация</span>
+                <h2>Введите логин и пароль</h2>
+            </div>
+
+            <form method="post" class="form-card form-card--light" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                    <div class="field-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="button button--wide">Войти</button>
+            </form>
+
+            <p class="switch-link">Профиль ещё не создан? <a href="{% url 'registration' %}">Открыть регистрацию</a></p>
+        </article>
+    </div>
+</section>
+{% endblock %}

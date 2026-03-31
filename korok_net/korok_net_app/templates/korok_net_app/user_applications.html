@@ -1,0 +1,119 @@
+{% extends 'korok_net_app/base.html' %}
+
+{% block title %}Мои заявки | Корочки.есть{% endblock %}
+
+{% block content %}
+<section class="section cabinet-hero">
+    <div class="container">
+        <div class="section-split">
+            <div>
+                <span class="section-kicker">Личный кабинет</span>
+                <h1>Здесь собраны ваши заявки, текущие статусы и отзывы по завершённым программам.</h1>
+            </div>
+            <a class="button" href="{% url 'main' %}#application-form">Оформить ещё одну заявку</a>
+        </div>
+
+        {% if applications %}
+        <div class="application-grid application-grid--stacked">
+            {% for app in applications %}
+            <article class="panel application-card application-card--light">
+                <div class="application-card__header">
+                    <div>
+                        <span class="status-pill status-pill--{{ app.status }}">{{ app.get_status_display }}</span>
+                        <h2>{{ app.get_title_display }}</h2>
+                    </div>
+                    <div class="application-meta">
+                        <span>Старт: {{ app.start_at|date:"d.m.Y" }}</span>
+                        <span>Создано: {{ app.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+
+                <div class="application-specs">
+                    <div>
+                        <strong>Формат оплаты</strong>
+                        <p>{{ app.get_payment_method_display }}</p>
+                    </div>
+                    <div>
+                        <strong>Обратная связь</strong>
+                        {% if app.reviews %}
+                        <p>{{ app.reviews.get_mark_display }}</p>
+                        {% else %}
+                        <p>Пока не добавлена</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if app.reviews %}
+                <div class="review-preview">
+                    <strong>Ваш отзыв</strong>
+                    <p>{{ app.reviews.text }}</p>
+                </div>
+                {% elif app.status == 'finished' %}
+                <details class="review-details" {% if review_target == app.id %}open{% endif %}>
+                    <summary>Оставить отзыв о завершённом обучении</summary>
+                    <form method="post" class="form-card form-card--inline form-card--light">
+                        {% csrf_token %}
+                        <input type="hidden" name="application_id" value="{{ app.id }}">
+
+                        {% with current_form=review_form %}
+                        <div class="field">
+                            <label for="id_mark_{{ app.id }}">Оценка</label>
+                            <select name="mark" id="id_mark_{{ app.id }}" class="input">
+                                {% for value, label in current_form.fields.mark.choices %}
+                                <option value="{{ value }}" {% if current_form.data.mark == value|stringformat:'s' and review_target == app.id %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if review_target == app.id %}
+                                {% for error in current_form.mark.errors %}
+                                <div class="field-error">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label for="id_text_{{ app.id }}">Отзыв</label>
+                            <textarea name="text" id="id_text_{{ app.id }}" rows="4" class="input">{% if review_target == app.id %}{{ current_form.data.text }}{% endif %}</textarea>
+                            {% if review_target == app.id %}
+                                {% for error in current_form.text.errors %}
+                                <div class="field-error">{{ error }}</div>
+                                {% endfor %}
+                                {% for error in current_form.non_field_errors %}
+                                <div class="field-error">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        {% endwith %}
+
+                        <button class="button" type="submit">Сохранить отзыв</button>
+                    </form>
+                </details>
+                {% else %}
+                <div class="review-locked">
+                    Форма отзыва откроется после того, как обучение перейдёт в статус завершённого.
+                </div>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            {% endif %}
+            <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <article class="panel panel--light empty-state">
+            <h2>Заявок пока нет</h2>
+            <p>Вы ещё не отправляли заявки на обучение. Начать можно с формы записи на главной странице.</p>
+            <a class="button" href="{% url 'main' %}#application-form">Перейти к заявке</a>
+        </article>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

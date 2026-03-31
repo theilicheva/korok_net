@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Корочки.есть{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Корочки.есть — платформа записи на онлайн-курсы ДПО с оформлением заявок, отслеживанием статусов и отзывами после завершения обучения.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}онлайн-курсы, ДПО, запись на обучение, личный кабинет, курсы программирования, курсы дизайна, курсы баз данных{% endblock %}">
+    {% block social_meta %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'korok_net_app/css/styles.css' %}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <div class="page-shell">
+        <div class="site-backdrop"></div>
+
+        <header class="site-header">
+            <div class="container topbar">
+                <a class="brand" href="{% url 'main' %}">
+                    <span class="brand__mark">
+                        <img src="{% static 'korok_net_app/images/image01.webp' %}" alt="Логотип Корочки.есть">
+                    </span>
+                    <span class="brand__copy">
+                        <strong>Корочки.есть</strong>
+                        <small>Платформа записи на программы ДПО</small>
+                    </span>
+                </a>
+
+                <button
+                    class="menu-toggle"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="site-menu"
+                    data-menu-toggle
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+
+                <div class="header-panel" id="site-menu" data-menu-panel>
+                    <nav class="site-nav">
+                        <a href="{% url 'main' %}">Главная</a>
+                        {% if request.user.is_authenticated and not request.user.is_staff %}
+                        <a href="{% url 'user_applications' %}">Мои заявки</a>
+                        {% endif %}
+                        {% if request.user.is_staff %}
+                        <a href="{% url 'admin_panel' %}">Админ-панель</a>
+                        {% endif %}
+                    </nav>
+
+                    <div class="header-actions">
+                        {% if request.user.is_authenticated %}
+                        <span class="header-chip">
+                            {% if request.user.is_staff %}
+                            Администратор
+                            {% else %}
+                            {{ request.user.user_info.short_name }}
+                            {% endif %}
+                        </span>
+                        <a class="button button--ghost" href="{% url 'logout' %}">Выйти</a>
+                        {% else %}
+                        <a class="button button--ghost" href="{% url 'authorization' %}">Войти</a>
+                        <a class="button" href="{% url 'registration' %}">Создать профиль</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            {% if messages %}
+            <div class="container flash-stack">
+                {% for message in messages %}
+                <div class="flash flash--{{ message.tags|default:'info' }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="site-footer">
+            <div class="container footer-grid">
+                <div>
+                    <span class="section-kicker">Платформа</span>
+                    <h3>Корочки.есть</h3>
+                    <p>Единое пространство для записи на программы ДПО, контроля статуса заявки и сбора отзывов после завершения обучения.</p>
+                </div>
+                <div>
+                    <span class="section-kicker">Навигация</span>
+                    <a href="{% url 'main' %}#application-form">Оставить заявку</a>
+                    <a href="{% url 'registration' %}">Регистрация</a>
+                    <a href="{% url 'authorization' %}">Авторизация</a>
+                </div>
+                <div>
+                    <span class="section-kicker">Сервис</span>
+                    <p>Пользователь выбирает направление, отслеживает статус обращения и оставляет отзыв по завершённому курсу в одном кабинете.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{% static 'korok_net_app/js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

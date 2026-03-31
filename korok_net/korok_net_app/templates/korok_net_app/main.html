@@ -1,0 +1,221 @@
+{% extends 'korok_net_app/base.html' %}
+{% load static %}
+
+{% block title %}Главная | Корочки.есть{% endblock %}
+{% block meta_description %}Оформите заявку на программу дополнительного образования, выберите старт потока и контролируйте статус обучения в личном кабинете.{% endblock %}
+{% block meta_keywords %}ДПО, запись на обучение, онлайн-курсы, цифровые программы, веб-дизайн, программирование, базы данных{% endblock %}
+{% block social_meta %}
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Корочки.есть — запись на программы ДПО">
+    <meta property="og:description" content="Выберите направление, отправьте заявку и отслеживайте движение по обучению в одном интерфейсе.">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'korok_net_app/images/image05.jpg' %}">
+    <meta property="og:locale" content="ru_RU">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Корочки.есть — запись на программы ДПО">
+    <meta name="twitter:description" content="Оформление заявок, отслеживание статусов и отзывы по завершённым курсам.">
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'korok_net_app/images/image05.jpg' %}">
+{% endblock %}
+
+{% block content %}
+<section class="hero hero--editorial">
+    <div class="container hero-layout hero-layout--single">
+        <div class="hero-copy">
+            <div class="eyebrow">Онлайн-курсы дополнительного образования</div>
+            <h1>Выберите программу, отправьте заявку и отслеживайте обучение в личном кабинете.</h1>
+            <p class="hero-text">
+                Платформа помогает быстро оформить обращение на курс, выбрать дату старта и держать под рукой
+                все изменения по заявке: от регистрации до завершения обучения.
+            </p>
+
+            <div class="hero-actions">
+                {% if request.user.is_authenticated and not request.user.is_staff %}
+                <a class="button" href="#application-form">Оформить заявку</a>
+                <a class="button button--ghost" href="{% url 'user_applications' %}">Открыть кабинет</a>
+                {% elif request.user.is_staff %}
+                <a class="button" href="{% url 'admin_panel' %}">Перейти в админку</a>
+                {% else %}
+                <a class="button" href="{% url 'registration' %}">Создать профиль</a>
+                <a class="button button--ghost" href="{% url 'authorization' %}">У меня уже есть аккаунт</a>
+                {% endif %}
+            </div>
+
+            <div class="hero-strip">
+                <article class="metric-card">
+                    <span>Направления</span>
+                    <strong>{{ hero_stats.courses }}</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Заявки в системе</span>
+                    <strong>{{ hero_stats.applications }}</strong>
+                </article>
+                <article class="metric-card">
+                    <span>Завершено</span>
+                    <strong>{{ hero_stats.completed }}</strong>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-split">
+            <div>
+                <span class="section-kicker">Как это работает</span>
+                <h2>Сервис выстраивает понятный путь от подачи заявки до итогового отзыва по завершённой программе.</h2>
+            </div>
+            <p class="section-lead">Все ключевые действия собраны в одном пространстве: регистрация, запись на курс, отслеживание статуса и обратная связь.</p>
+        </div>
+
+        <div class="route-grid">
+            <article class="route-card">
+                <span>01</span>
+                <h3>Создайте профиль</h3>
+                <p>После регистрации ваши данные сохраняются в системе и используются при оформлении заявок.</p>
+            </article>
+            <article class="route-card">
+                <span>02</span>
+                <h3>Выберите направление</h3>
+                <p>Укажите курс, дату старта и подходящий формат оплаты в одной форме.</p>
+            </article>
+            <article class="route-card">
+                <span>03</span>
+                <h3>Следите за статусом</h3>
+                <p>Личный кабинет показывает все обращения и текущий этап по каждому из них.</p>
+            </article>
+            <article class="route-card">
+                <span>04</span>
+                <h3>Оставьте отзыв</h3>
+                <p>После завершения программы можно оценить качество обучения и сохранить впечатления в системе.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section slider-stage">
+    <div class="container">
+        <div class="media-stage">
+            <div class="slider editorial-slider" data-slider>
+                <div class="slider__track">
+                    <article class="slide active">
+                        <img src="{% static 'korok_net_app/images/image05.jpg' %}" alt="Команда обсуждает цифровой продукт">
+                    </article>
+                    <article class="slide">
+                        <img src="{% static 'korok_net_app/images/image06.jpg' %}" alt="Рабочее пространство с ноутбуком и заметками">
+                    </article>
+                    <article class="slide">
+                        <img src="{% static 'korok_net_app/images/image11.jpg' %}" alt="Творческая работа над интерфейсом">
+                    </article>
+                    <article class="slide">
+                        <img src="{% static 'korok_net_app/images/image17.jpeg' %}" alt="Планирование обучения и визуальных решений">
+                    </article>
+                </div>
+                <button class="slider__control slider__control--prev" type="button" data-slider-prev aria-label="Предыдущий слайд">Назад</button>
+                <button class="slider__control slider__control--next" type="button" data-slider-next aria-label="Следующий слайд">Вперёд</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section--contrast">
+    <div class="container showcase-grid">
+        <article class="showcase-panel">
+            <span class="section-kicker">Программы</span>
+            <h2>Выберите направление, которое подходит вашим учебным и профессиональным задачам.</h2>
+            <div class="course-list">
+                <div class="course-card course-card--angled">
+                    <h3>Алгоритмизация и программирование</h3>
+                    <p>Подходит тем, кто хочет освоить основы логики программ, работу с алгоритмами и базовые принципы разработки.</p>
+                </div>
+                <div class="course-card course-card--angled">
+                    <h3>Веб-дизайн</h3>
+                    <p>Направление для изучения композиции, интерфейсов и визуального оформления цифровых продуктов.</p>
+                </div>
+                <div class="course-card course-card--angled">
+                    <h3>Проектирование баз данных</h3>
+                    <p>Курс о структуре данных, связях между сущностями и создании надёжных систем хранения информации.</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="manifest-panel">
+            <span class="section-kicker">Преимущества</span>
+            <h2>Пользователь получает единый рабочий сценарий без лишних переходов и разрозненных действий.</h2>
+            <ul class="manifest-list">
+                <li>Краткая и понятная подача направлений обучения.</li>
+                <li>Быстрое оформление заявки в одном блоке.</li>
+                <li>Личный кабинет для контроля статусов и отзывов.</li>
+                <li>Отдельная административная зона для сотрудников.</li>
+            </ul>
+        </article>
+    </div>
+</section>
+
+<section class="section section--application" id="application-form">
+    <div class="container application-layout">
+        <article class="application-intro">
+            <span class="section-kicker">Заявка на обучение</span>
+            <h2>Заполните короткую форму записи на программу.</h2>
+            <p>Укажите направление, дату старта и формат оплаты. После отправки заявка сразу появится в личном кабинете.</p>
+
+            <div class="application-points">
+                <div>
+                    <strong>1.</strong>
+                    <p>Выберите интересующее направление.</p>
+                </div>
+                <div>
+                    <strong>2.</strong>
+                    <p>Назначьте старт потока и удобный формат оплаты.</p>
+                </div>
+                <div>
+                    <strong>3.</strong>
+                    <p>Следите за изменениями статуса после отправки формы.</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel panel--light application-panel">
+            <div class="panel__header">
+                <span class="panel__label">Форма записи</span>
+                <h2>Подать заявку</h2>
+            </div>
+
+            <form method="post" class="form-card form-card--light">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="form-grid form-grid--single">
+                    {% for field in form %}
+                    <div class="field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <small>{{ field.help_text }}</small>
+                        {% endif %}
+                        {% for error in field.errors %}
+                        <div class="field-error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if request.user.is_authenticated and not request.user.is_staff %}
+                <button type="submit" class="button button--wide">Отправить заявку</button>
+                {% elif request.user.is_staff %}
+                <div class="form-note">Для сотрудников приём и обработка заявок доступны в административной панели.</div>
+                <a class="button button--wide" href="{% url 'admin_panel' %}">Открыть админ-панель</a>
+                {% else %}
+                <button type="submit" class="button button--wide">Войти, чтобы отправить заявку</button>
+                {% endif %}
+            </form>
+        </article>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends 'korok_net_app/base.html' %}
+{% load static %}
+
+{% block title %}Регистрация | Корочки.есть{% endblock %}
+
+{% block content %}
+<section class="auth-layout">
+    <div class="container auth-grid auth-grid--reverse">
+        <article class="auth-promo auth-promo--dark">
+            <span class="section-kicker">Регистрация</span>
+            <h1>Создайте личный профиль для подачи заявок на программы дополнительного образования.</h1>
+            <p>После регистрации вы сможете выбирать курсы, отслеживать статусы обращений и оставлять отзывы по завершённым программам.</p>
+            <div class="promo-points promo-points--stack">
+                <div>
+                    <strong>Логин и почта</strong>
+                    <p>Используются для входа в систему и связи по поданным заявкам.</p>
+                </div>
+                <div>
+                    <strong>ФИО и телефон</strong>
+                    <p>Нужны для корректной идентификации пользователя и оформления обучения.</p>
+                </div>
+                <div>
+                    <strong>Пароль</strong>
+                    <p>Обеспечивает защищённый доступ к вашему кабинету.</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel panel--light auth-panel">
+            <div class="panel__header">
+                <span class="panel__label">Личный профиль</span>
+                <h2>Заполните регистрационную форму</h2>
+            </div>
+
+            <form id="registration-form" method="post" class="form-card form-card--light" novalidate>
+                {% csrf_token %}
+
+                <div id="form-messages">
+                    {% if form.non_field_errors %}
+                    <div class="form-errors">
+                        {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <small>{{ field.help_text }}</small>
+                    {% endif %}
+
+                    {% if field.name == 'full_name' %}
+                    <div class="field-error error-message" id="full_name_error"{% if not field.errors %} style="display:none;"{% endif %}>
+                        {% for error in field.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% elif field.name == 'username' %}
+                    <div class="field-error error-message" id="username_error"{% if not field.errors %} style="display:none;"{% endif %}>
+                        {% for error in field.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% elif field.name == 'email' %}
+                    <div class="field-error error-message" id="email_error"{% if not field.errors %} style="display:none;"{% endif %}>
+                        {% for error in field.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% elif field.name == 'phone_num' %}
+                    <div class="field-error error-message" id="phone_num_error"{% if not field.errors %} style="display:none;"{% endif %}>
+                        {% for error in field.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% elif field.name == 'password1' %}
+                    <div class="field-error error-message" id="password1_error"{% if not field.errors %} style="display:none;"{% endif %}>
+                        {% for error in field.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% elif field.name == 'password2' %}
+                    <div class="field-error error-message" id="password2_error"{% if not field.errors %} style="display:none;"{% endif %}>
+                        {% for error in field.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <button type="submit" id="submit-btn" class="button button--wide">Зарегистрироваться</button>
+            </form>
+
+            <p class="switch-link">Уже есть профиль? <a href="{% url 'authorization' %}">Перейти ко входу</a></p>
+        </article>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'korok_net_app/js/registration.js' %}"></script>
+<script src="{% static 'korok_net_app/js/phone_validation.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends 'korok_net_app/base.html' %}
+
+{% block title %}Панель администратора | Корочки.есть{% endblock %}
+
+{% block content %}
+<section class="section admin-shell">
+    <div class="container">
+        <div class="section-split">
+            <div>
+                <span class="section-kicker">Администрирование</span>
+                <h1>Панель для обработки заявок, изменения статусов и просмотра отзывов пользователей.</h1>
+            </div>
+        </div>
+
+        <div class="dashboard-grid dashboard-grid--dark">
+            <article class="metric-card">
+                <span>Всего заявок</span>
+                <strong>{{ dashboard.total }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>Новые</span>
+                <strong>{{ dashboard.new }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>В работе</span>
+                <strong>{{ dashboard.in_process }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>Завершены</span>
+                <strong>{{ dashboard.finished }}</strong>
+            </article>
+        </div>
+
+        <div class="admin-layout">
+            <article class="panel panel--light">
+                <div class="panel__header">
+                    <span class="panel__label">Фильтры</span>
+                    <h2>Найти нужную заявку</h2>
+                </div>
+                <form method="get" class="filter-grid">
+                    {% for field in filter_form %}
+                    <div class="field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                    {% endfor %}
+                    <div class="filter-actions">
+                        <button class="button" type="submit">Применить</button>
+                        <a class="button button--ghost" href="{% url 'admin_panel' %}">Сбросить</a>
+                    </div>
+                </form>
+            </article>
+
+            <article class="panel">
+                <div class="panel__header">
+                    <span class="panel__label">Курсы</span>
+                    <h2>Распределение заявок</h2>
+                </div>
+                <div class="course-load">
+                    {% for item in popular_courses %}
+                    <div class="course-load__item">
+                        <span>{{ item.title|title }}</span>
+                        <strong>{{ item.total }}</strong>
+                    </div>
+                    {% empty %}
+                    <p>Пока нет данных для отображения.</p>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+
+        {% if applications %}
+        <div class="table-wrap panel panel--light">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Курс</th>
+                        <th>Старт</th>
+                        <th>Оплата</th>
+                        <th>Статус</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr>
+                        <td>
+                            <strong>{{ app.author }}</strong>
+                            <span>{{ app.author.user.username }}</span>
+                            <span>{{ app.author.phone_num }}</span>
+                        </td>
+                        <td>{{ app.get_title_display }}</td>
+                        <td>{{ app.start_at|date:"d.m.Y" }}</td>
+                        <td>{{ app.get_payment_method_display }}</td>
+                        <td>
+                            <span class="status-pill status-pill--{{ app.status }}">{{ app.get_status_display }}</span>
+                        </td>
+                        <td>
+                            <form method="post" class="status-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_status">
+                                <input type="hidden" name="application_id" value="{{ app.id }}">
+                                <select name="status" class="input input--compact">
+                                    {% for value, label in status_form_choices %}
+                                    <option value="{{ value }}" {% if app.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="button button--small" type="submit">Сохранить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            {% endif %}
+            <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <article class="panel panel--light empty-state">
+            <h2>По выбранным фильтрам ничего не найдено</h2>
+            <p>Измените параметры поиска или вернитесь позже, когда в системе появятся новые обращения.</p>
+        </article>
+        {% endif %}
+
+        <article class="panel reviews-panel">
+            <div class="panel__header">
+                <span class="panel__label">Отзывы</span>
+                <h2>Обратная связь от пользователей</h2>
+            </div>
+            {% if reviews %}
+            <div class="reviews-grid">
+                {% for review in reviews %}
+                <article class="review-card">
+                    <div class="review-card__meta">
+                        <div>
+                            <strong>{{ review.application.author }}</strong>
+                            <span>{{ review.application.get_title_display }}</span>
+                        </div>
+                        <span class="status-pill status-pill--finished">{{ review.get_mark_display }}</span>
+                    </div>
+                    <p>{{ review.text }}</p>
+                    <form method="post" class="review-delete-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_review">
+                        <input type="hidden" name="review_id" value="{{ review.id }}">
+                        <button class="button button--ghost button--small" type="submit">Удалить отзыв</button>
+                    </form>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="review-card">
+                <p>По текущей выборке отзывов пока нет.</p>
+            </div>
+            {% endif %}
+        </article>
+    </div>
+</section>
+{% endblock %}
