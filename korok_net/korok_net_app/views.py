@@ -117,6 +117,11 @@ class HomeView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["form"] = self.get_application_form(kwargs.get("form"))
         context["courses"] = CourseChoices
+        context["featured_reviews"] = Reviews.objects.select_related(
+            "application", "application__author", "application__author__user"
+        ).filter(
+            application__status=ApplicationStatusChoices.FINISHED
+        ).order_by("-created_at")[:3]
         context["hero_stats"] = {
             "courses": len(CourseChoices.choices),
             "applications": Applications.objects.count(),
@@ -205,7 +210,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 
 class AdminPanelView(AdminRequiredMixin, ListView):
     model = Applications
-    paginate_by = 8
+    paginate_by = 4
     template_name = "korok_net_app/admin_panel.html"
     context_object_name = "applications"
 
@@ -287,14 +292,11 @@ class AdminPanelView(AdminRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         queryset = Applications.objects.all()
-        reviews_queryset = Reviews.objects.select_related(
-            "application", "application__author", "application__author__user"
-        ).order_by("-created_at")
         context["filter_form"] = getattr(self, "filter_form", self.get_filter_form())
         context["status_form_choices"] = ApplicationStatusChoices.choices
-        context["reviews"] = self.apply_review_filters(
-            reviews_queryset.filter(application__status=ApplicationStatusChoices.FINISHED)
-        )
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        context["filter_query"] = params.urlencode()
         context["dashboard"] = {
             "total": queryset.count(),
             "new": queryset.filter(status=ApplicationStatusChoices.NEW).count(),

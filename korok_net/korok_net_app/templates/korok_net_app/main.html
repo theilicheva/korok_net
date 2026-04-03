@@ -152,6 +152,39 @@
     </div>
 </section>
 
+<section class="section">
+    <div class="container">
+        <div class="section-split">
+            <div>
+                <span class="section-kicker">Отзывы</span>
+                <h2>Что говорят пользователи после завершения обучения.</h2>
+            </div>
+        </div>
+
+        {% if featured_reviews %}
+        <div class="reviews-grid reviews-grid--homepage">
+            {% for review in featured_reviews %}
+            <article class="review-card">
+                <div class="review-card__meta">
+                    <div>
+                        <strong>{{ review.application.author }}</strong>
+                        <span>{{ review.application.get_title_display }}</span>
+                    </div>
+                    <span class="status-pill status-pill--finished">{{ review.get_mark_display }}</span>
+                </div>
+                <p>{{ review.text }}</p>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <article class="panel panel--light empty-state">
+            <h2>Отзывы пока не опубликованы</h2>
+            <p>После завершения первых программ здесь появится обратная связь от пользователей.</p>
+        </article>
+        {% endif %}
+    </div>
+</section>
+
 <section class="section section--application" id="application-form">
     <div class="container application-layout">
         <article class="application-intro">

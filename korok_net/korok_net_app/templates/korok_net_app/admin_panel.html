@@ -8,7 +8,7 @@
         <div class="section-split">
             <div>
                 <span class="section-kicker">Администрирование</span>
-                <h1>Панель для обработки заявок, изменения статусов и просмотра отзывов пользователей.</h1>
+                <h1>Панель для обработки заявок, изменения статусов и контроля обратной связи от пользователей.</h1>
             </div>
         </div>
 
@@ -70,59 +70,82 @@
         </div>
 
         {% if applications %}
-        <div class="table-wrap panel panel--light">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Пользователь</th>
-                        <th>Курс</th>
-                        <th>Старт</th>
-                        <th>Оплата</th>
-                        <th>Статус</th>
-                        <th>Действие</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for app in applications %}
-                    <tr>
-                        <td>
-                            <strong>{{ app.author }}</strong>
-                            <span>{{ app.author.user.username }}</span>
-                            <span>{{ app.author.phone_num }}</span>
-                        </td>
-                        <td>{{ app.get_title_display }}</td>
-                        <td>{{ app.start_at|date:"d.m.Y" }}</td>
-                        <td>{{ app.get_payment_method_display }}</td>
-                        <td>
-                            <span class="status-pill status-pill--{{ app.status }}">{{ app.get_status_display }}</span>
-                        </td>
-                        <td>
-                            <form method="post" class="status-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="update_status">
-                                <input type="hidden" name="application_id" value="{{ app.id }}">
-                                <select name="status" class="input input--compact">
-                                    {% for value, label in status_form_choices %}
-                                    <option value="{{ value }}" {% if app.status == value %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button class="button button--small" type="submit">Сохранить</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="admin-app-grid">
+            {% for app in applications %}
+            <article class="panel panel--light admin-app-card">
+                <div class="application-card__header">
+                    <div>
+                        <span class="status-pill status-pill--{{ app.status }}">{{ app.get_status_display }}</span>
+                        <h2>{{ app.get_title_display }}</h2>
+                    </div>
+                    <div class="application-meta">
+                        <span>Старт: {{ app.start_at|date:"d.m.Y" }}</span>
+                        <span>Создано: {{ app.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+
+                <div class="application-specs">
+                    <div>
+                        <strong>Пользователь</strong>
+                        <p>{{ app.author }}</p>
+                        <p>{{ app.author.user.username }}</p>
+                        <p>{{ app.author.phone_num }}</p>
+                    </div>
+                    <div>
+                        <strong>Оплата</strong>
+                        <p>{{ app.get_payment_method_display }}</p>
+                    </div>
+                </div>
+
+                <div class="admin-card-actions">
+                    <form method="post" class="status-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="application_id" value="{{ app.id }}">
+                        <select name="status" class="input input--compact">
+                            {% for value, label in status_form_choices %}
+                            <option value="{{ value }}" {% if app.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="button button--small" type="submit">Сохранить статус</button>
+                    </form>
+                </div>
+
+                {% if app.reviews %}
+                <div class="admin-review-box">
+                    <div class="review-card__meta">
+                        <strong>Отзыв по заявке</strong>
+                        <span class="status-pill status-pill--finished">{{ app.reviews.get_mark_display }}</span>
+                    </div>
+                    <p>{{ app.reviews.text }}</p>
+                    <form method="post" class="review-delete-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_review">
+                        <input type="hidden" name="review_id" value="{{ app.reviews.id }}">
+                        <button class="button button--ghost button--small" type="submit">Удалить отзыв</button>
+                    </form>
+                </div>
+                {% elif app.status == 'finished' %}
+                <div class="review-locked">
+                    Обучение завершено, но отзыв к этой заявке пока не оставлен.
+                </div>
+                {% else %}
+                <div class="review-locked">
+                    Отзыв появится здесь после завершения обучения и публикации обратной связи пользователем.
+                </div>
+                {% endif %}
+            </article>
+            {% endfor %}
         </div>
 
         {% if is_paginated %}
         <div class="pagination">
             {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            <a href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Назад</a>
             {% endif %}
             <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+            <a href="?{% if filter_query %}{{ filter_query }}&{% endif %}page={{ page_obj.next_page_number }}">Вперёд</a>
             {% endif %}
         </div>
         {% endif %}
@@ -132,39 +155,6 @@
             <p>Измените параметры поиска или вернитесь позже, когда в системе появятся новые обращения.</p>
         </article>
         {% endif %}
-
-        <article class="panel reviews-panel">
-            <div class="panel__header">
-                <span class="panel__label">Отзывы</span>
-                <h2>Обратная связь от пользователей</h2>
-            </div>
-            {% if reviews %}
-            <div class="reviews-grid">
-                {% for review in reviews %}
-                <article class="review-card">
-                    <div class="review-card__meta">
-                        <div>
-                            <strong>{{ review.application.author }}</strong>
-                            <span>{{ review.application.get_title_display }}</span>
-                        </div>
-                        <span class="status-pill status-pill--finished">{{ review.get_mark_display }}</span>
-                    </div>
-                    <p>{{ review.text }}</p>
-                    <form method="post" class="review-delete-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="delete_review">
-                        <input type="hidden" name="review_id" value="{{ review.id }}">
-                        <button class="button button--ghost button--small" type="submit">Удалить отзыв</button>
-                    </form>
-                </article>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="review-card">
-                <p>По текущей выборке отзывов пока нет.</p>
-            </div>
-            {% endif %}
-        </article>
     </div>
 </section>
 {% endblock %}

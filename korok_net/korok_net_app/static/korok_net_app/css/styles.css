@@ -790,6 +790,12 @@ textarea.input.error {
     grid-template-columns: 1fr;
 }
 
+.admin-app-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
 .application-card__header {
     display: flex;
     justify-content: space-between;
@@ -887,6 +893,25 @@ textarea.input.error {
 .status-form {
     display: grid;
     gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+}
+
+.admin-card-actions {
+    margin-bottom: 18px;
+}
+
+.admin-review-box {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 20px;
+    background: rgba(244, 122, 32, 0.07);
+    border: 1px solid rgba(244, 122, 32, 0.14);
+}
+
+.reviews-grid--homepage {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .course-load__item {
@@ -991,7 +1016,9 @@ textarea.input.error {
     .section-split,
     .route-grid,
     .reviews-grid,
-    .media-stage {
+    .media-stage,
+    .admin-app-grid,
+    .reviews-grid--homepage {
         grid-template-columns: 1fr;
     }
 
@@ -1094,6 +1121,10 @@ textarea.input.error {
     .application-card__header,
     .application-specs {
         flex-direction: column;
+    }
+
+    .status-form {
+        grid-template-columns: 1fr;
     }
 
     .application-meta {
