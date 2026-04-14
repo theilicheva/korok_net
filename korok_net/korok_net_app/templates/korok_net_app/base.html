@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f47a20">
     <title>{% block title %}Корочки.есть{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Корочки.есть — платформа записи на онлайн-курсы ДПО с оформлением заявок, отслеживанием статусов и отзывами после завершения обучения.{% endblock %}">
     <meta name="keywords" content="{% block meta_keywords %}онлайн-курсы, ДПО, запись на обучение, личный кабинет, курсы программирования, курсы дизайна, курсы баз данных{% endblock %}">
     {% block social_meta %}{% endblock %}
+    <link rel="preload" as="image" href="{% static 'korok_net_app/images/image01.webp' %}" fetchpriority="high">
     <link rel="stylesheet" href="{% static 'korok_net_app/css/styles.css' %}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -18,7 +20,7 @@
             <div class="container topbar">
                 <a class="brand" href="{% url 'main' %}">
                     <span class="brand__mark">
-                        <img src="{% static 'korok_net_app/images/image01.webp' %}" alt="Логотип Корочки.есть">
+                        <img src="{% static 'korok_net_app/images/image01.webp' %}" alt="Логотип Корочки.есть" width="60" height="60" fetchpriority="high" decoding="async">
                     </span>
                     <span class="brand__copy">
                         <strong>Корочки.есть</strong>

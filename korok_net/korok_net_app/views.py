@@ -11,6 +11,7 @@ from django.views.generic import FormView, ListView, TemplateView
 
 from .forms import (
     AdminApplicationFilterForm,
+    AdminCourseForm,
     AdminDirectLoginForm,
     AdminStatusUpdateForm,
     ApplicationForm,
@@ -18,7 +19,7 @@ from .forms import (
     RegistrationUserForm,
     ReviewForm,
 )
-from .models import ApplicationStatusChoices, Applications, CourseChoices, Reviews
+from .models import ApplicationStatusChoices, Applications, Course, Reviews
 
 
 class CheckUsernameView(View):
@@ -115,15 +116,16 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        active_courses = Course.objects.filter(is_active=True).order_by("sort_order", "title")
         context["form"] = self.get_application_form(kwargs.get("form"))
-        context["courses"] = CourseChoices
+        context["course_cards"] = active_courses[:6]
         context["featured_reviews"] = Reviews.objects.select_related(
             "application", "application__author", "application__author__user"
-        ).filter(
-            application__status=ApplicationStatusChoices.FINISHED
-        ).order_by("-created_at")[:3]
+        ).filter(application__status=ApplicationStatusChoices.FINISHED).order_by(
+            "-created_at"
+        )[:3]
         context["hero_stats"] = {
-            "courses": len(CourseChoices.choices),
+            "courses": active_courses.count(),
             "applications": Applications.objects.count(),
             "completed": Applications.objects.filter(
                 status=ApplicationStatusChoices.FINISHED
@@ -137,7 +139,10 @@ class HomeView(TemplateView):
             return redirect("authorization")
 
         if request.user.is_staff:
-            messages.info(request, "Для работы с заявками используйте панель администратора.")
+            messages.info(
+                request,
+                "Для работы с заявками используйте панель администратора.",
+            )
             return redirect("admin_panel")
 
         form = ApplicationForm(request.POST)
@@ -217,6 +222,9 @@ class AdminPanelView(AdminRequiredMixin, ListView):
     def get_filter_form(self):
         return AdminApplicationFilterForm(self.request.GET or None)
 
+    def get_course_form(self):
+        return getattr(self, "course_form", AdminCourseForm())
+
     def apply_application_filters(self, queryset):
         if self.filter_form.is_valid():
             q = self.filter_form.cleaned_data.get("q")
@@ -224,37 +232,21 @@ class AdminPanelView(AdminRequiredMixin, ListView):
             course = self.filter_form.cleaned_data.get("course")
 
             if q:
+                matched_course_codes = list(
+                    Course.objects.filter(title__icontains=q).values_list("code", flat=True)
+                )
                 queryset = queryset.filter(
                     Q(author__surname__icontains=q)
                     | Q(author__name__icontains=q)
                     | Q(author__patronymic__icontains=q)
                     | Q(author__phone_num__icontains=q)
                     | Q(author__user__username__icontains=q)
+                    | Q(title__in=matched_course_codes)
                 )
             if status:
                 queryset = queryset.filter(status=status)
             if course:
                 queryset = queryset.filter(title=course)
-        return queryset
-
-    def apply_review_filters(self, queryset):
-        if self.filter_form.is_valid():
-            q = self.filter_form.cleaned_data.get("q")
-            status = self.filter_form.cleaned_data.get("status")
-            course = self.filter_form.cleaned_data.get("course")
-
-            if q:
-                queryset = queryset.filter(
-                    Q(application__author__surname__icontains=q)
-                    | Q(application__author__name__icontains=q)
-                    | Q(application__author__patronymic__icontains=q)
-                    | Q(application__author__phone_num__icontains=q)
-                    | Q(application__author__user__username__icontains=q)
-                )
-            if status:
-                queryset = queryset.filter(application__status=status)
-            if course:
-                queryset = queryset.filter(application__title=course)
         return queryset
 
     def get_queryset(self):
@@ -265,34 +257,48 @@ class AdminPanelView(AdminRequiredMixin, ListView):
         self.filter_form = self.get_filter_form()
         return self.apply_application_filters(queryset)
 
+    def render_with_errors(self):
+        self.object_list = self.get_queryset()
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
     def post(self, request, *args, **kwargs):
         action = request.POST.get("action")
 
+        if action == "create_course":
+            self.course_form = AdminCourseForm(request.POST)
+            if self.course_form.is_valid():
+                course = self.course_form.save()
+                messages.success(request, f"Курс «{course.title}» добавлен и доступен пользователям.")
+                return redirect("admin_panel")
+            messages.error(request, "Не удалось добавить курс. Проверьте заполнение формы.")
+            return self.render_with_errors()
+
         if action == "delete_review":
             review = get_object_or_404(Reviews, pk=request.POST.get("review_id"))
-            course_title = review.application.get_title_display()
+            course_title = review.application.display_title
             review.delete()
+            messages.success(request, f"Отзыв по курсу «{course_title}» удален.")
+            return redirect("admin_panel")
+
+        application = get_object_or_404(Applications, pk=request.POST.get("application_id"))
+        form = AdminStatusUpdateForm(request.POST, instance=application)
+        if form.is_valid():
+            form.save()
             messages.success(
                 request,
-                f"Отзыв по курсу «{course_title}» удален.",
+                f"Статус заявки для курса «{application.display_title}» обновлен.",
             )
         else:
-            application = get_object_or_404(Applications, pk=request.POST.get("application_id"))
-            form = AdminStatusUpdateForm(request.POST, instance=application)
-            if form.is_valid():
-                form.save()
-                messages.success(
-                    request,
-                    f"Статус заявки для курса «{application.get_title_display()}» обновлен.",
-                )
-            else:
-                messages.error(request, "Не удалось обновить статус заявки.")
+            messages.error(request, "Не удалось обновить статус заявки.")
         return redirect("admin_panel")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         queryset = Applications.objects.all()
+        course_map = Course.objects.in_bulk(field_name="code")
         context["filter_form"] = getattr(self, "filter_form", self.get_filter_form())
+        context["course_form"] = self.get_course_form()
         context["status_form_choices"] = ApplicationStatusChoices.choices
         params = self.request.GET.copy()
         params.pop("page", None)
@@ -305,9 +311,16 @@ class AdminPanelView(AdminRequiredMixin, ListView):
             ).count(),
             "finished": queryset.filter(status=ApplicationStatusChoices.FINISHED).count(),
         }
-        course_labels = dict(CourseChoices.choices)
         context["popular_courses"] = [
-            {"title": course_labels.get(item["title"], item["title"]), "total": item["total"]}
-            for item in queryset.values("title").annotate(total=Count("id")).order_by("-total", "title")
+            {
+                "title": course_map[item["title"]].title
+                if item["title"] in course_map
+                else item["title"],
+                "total": item["total"],
+            }
+            for item in queryset.values("title").annotate(total=Count("id")).order_by(
+                "-total", "title"
+            )
         ]
+        context["courses_catalog"] = Course.objects.order_by("sort_order", "title")
         return context

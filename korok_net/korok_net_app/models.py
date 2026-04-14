@@ -1,15 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
-
-
-class CourseChoices(models.TextChoices):
-    ALGORITHMS = (
-        "algorithms",
-        "Основы алгоритмизации и программирования",
-    )
-    WEB_DESIGN = ("web_design", "Основы веб-дизайна")
-    DATABASES = ("databases", "Основы проектирования баз данных")
+from django.utils.text import slugify
 
 
 class PaymentMethodChoices(models.TextChoices):
@@ -21,6 +13,63 @@ class ApplicationStatusChoices(models.TextChoices):
     NEW = ("new", "Новая")
     IN_PROCESS = ("in_process", "Идет обучение")
     FINISHED = ("finished", "Обучение завершено")
+
+
+class Course(models.Model):
+    code = models.SlugField(
+        max_length=64,
+        unique=True,
+        allow_unicode=True,
+        verbose_name="Код курса",
+    )
+    title = models.CharField(
+        max_length=180,
+        unique=True,
+        verbose_name="Название курса",
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Описание курса",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Доступен для записи",
+    )
+    sort_order = models.PositiveIntegerField(
+        default=100,
+        verbose_name="Порядок вывода",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания",
+    )
+
+    class Meta:
+        db_table = "courses"
+        verbose_name = "Курс"
+        verbose_name_plural = "Курсы"
+        ordering = ["sort_order", "title"]
+
+    def __str__(self):
+        return self.title
+
+    @classmethod
+    def build_unique_code(cls, title):
+        base_code = slugify(title, allow_unicode=True) or "course"
+        candidate = base_code[:64]
+        suffix = 2
+
+        while cls.objects.filter(code=candidate).exists():
+            tail = f"-{suffix}"
+            candidate = f"{base_code[: 64 - len(tail)]}{tail}"
+            suffix += 1
+
+        return candidate
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.build_unique_code(self.title)
+        super().save(*args, **kwargs)
 
 
 class UserInformation(models.Model):
@@ -73,8 +122,7 @@ class Applications(models.Model):
         verbose_name="Автор",
     )
     title = models.CharField(
-        max_length=32,
-        choices=CourseChoices.choices,
+        max_length=64,
         verbose_name="Наименование курса",
     )
     start_at = models.DateField(verbose_name="Дата начала обучения")
@@ -101,7 +149,16 @@ class Applications(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.get_title_display()} - {self.author}"
+        return f"{self.display_title} - {self.author}"
+
+    @property
+    def display_title(self):
+        if hasattr(self, "_display_title_cache"):
+            return self._display_title_cache
+
+        course = Course.objects.filter(code=self.title).only("title").first()
+        self._display_title_cache = course.title if course else self.title
+        return self._display_title_cache
 
     @property
     def has_review(self):

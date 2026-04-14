@@ -11,7 +11,7 @@ from django.utils.html import strip_tags
 from .models import (
     ApplicationStatusChoices,
     Applications,
-    CourseChoices,
+    Course,
     PaymentMethodChoices,
     Reviews,
     UserInformation,
@@ -49,6 +49,9 @@ class StyledFormMixin:
     def apply_base_styles(self):
         for field in self.fields.values():
             current = field.widget.attrs.get("class", "")
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs["class"] = f"{current} input-checkbox".strip()
+                continue
             field.widget.attrs["class"] = f"{current} {self.default_input_class}".strip()
 
 
@@ -208,7 +211,7 @@ class AuthorizationUserForm(StyledFormMixin, AuthenticationForm):
     )
 
     error_messages = {
-        "invalid_login": "Неверный логин или пароль.",
+        "invalid_login": "Неверные учетные данные.",
         "inactive": "Эта учетная запись отключена.",
     }
 
@@ -216,12 +219,51 @@ class AuthorizationUserForm(StyledFormMixin, AuthenticationForm):
         super().__init__(*args, **kwargs)
         self.apply_base_styles()
 
+    def clean_username(self):
+        username = self.cleaned_data.get("username", "").strip()
+        username = validate_no_markup(username, "Логин")
+        if not username:
+            raise forms.ValidationError("Введите логин.")
+        if not User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("Пользователь с таким логином не найден.")
+        return username
+
+    def clean_password(self):
+        password = self.cleaned_data.get("password", "")
+        if not password:
+            raise forms.ValidationError("Введите пароль.")
+        return password
+
+    def clean(self):
+        cleaned_data = super(AuthenticationForm, self).clean()
+        username = cleaned_data.get("username")
+        password = cleaned_data.get("password")
+
+        if not username or not password:
+            return cleaned_data
+
+        user = User.objects.filter(username__iexact=username).first()
+        if user is None:
+            raise forms.ValidationError("Пользователь с таким логином не найден.")
+        if not user.check_password(password):
+            raise forms.ValidationError("Введен неверный пароль.")
+        if not user.is_active:
+            raise forms.ValidationError(self.error_messages["inactive"])
+
+        self.user_cache = authenticate(
+            self.request, username=user.username, password=password
+        )
+        if self.user_cache is None:
+            raise forms.ValidationError(self.error_messages["invalid_login"])
+        self.confirm_login_allowed(self.user_cache)
+        return cleaned_data
+
 
 class ApplicationForm(StyledFormMixin, forms.ModelForm):
     title = forms.ChoiceField(
         label="Направление",
-        choices=CourseChoices.choices,
-        widget=forms.Select(),
+        choices=(),
+        widget=forms.RadioSelect(),
     )
     start_at = forms.DateField(
         label="Старт потока",
@@ -242,6 +284,26 @@ class ApplicationForm(StyledFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        active_courses = list(
+            Course.objects.filter(is_active=True).order_by("sort_order", "title")
+        )
+        self.course_options = [
+            {
+                "code": course.code,
+                "title": course.title,
+                "description": course.description
+                or "Программа помогает освоить практические навыки и уверенно двигаться к реальным задачам.",
+            }
+            for course in active_courses
+        ]
+        if self.course_options:
+            self.fields["title"].choices = [
+                (course["code"], course["title"]) for course in self.course_options
+            ]
+        else:
+            self.fields["title"].choices = [("", "Новые курсы появятся совсем скоро")]
+            self.fields["title"].disabled = True
+            self.fields["title"].help_text = "Запись откроется после публикации новых курсов."
         self.apply_base_styles()
 
     def clean_start_at(self):
@@ -306,7 +368,9 @@ class AdminApplicationFilterForm(StyledFormMixin, forms.Form):
     q = forms.CharField(
         label="Поиск",
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "Курс, пользователь или телефон"}),
+        widget=forms.TextInput(
+            attrs={"placeholder": "Курс, пользователь или телефон"}
+        ),
     )
     status = forms.ChoiceField(
         label="Статус",
@@ -317,17 +381,27 @@ class AdminApplicationFilterForm(StyledFormMixin, forms.Form):
     course = forms.ChoiceField(
         label="Курс",
         required=False,
-        choices=[("", "Все курсы"), *CourseChoices.choices],
+        choices=(),
         widget=forms.Select(),
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        course_choices = [
+            (course.code, course.title)
+            for course in Course.objects.order_by("sort_order", "title")
+        ]
+        self.fields["course"].choices = [("", "Все курсы"), *course_choices]
         self.apply_base_styles()
 
     def clean_q(self):
         q = self.cleaned_data["q"]
-        return validate_no_markup(q, "Поиск")
+        q = validate_no_markup(q, "Поиск")
+        if len(q) > 120:
+            raise forms.ValidationError(
+                "Поисковый запрос не должен превышать 120 символов."
+            )
+        return q
 
 
 class AdminStatusUpdateForm(StyledFormMixin, forms.ModelForm):
@@ -335,6 +409,50 @@ class AdminStatusUpdateForm(StyledFormMixin, forms.ModelForm):
         model = Applications
         fields = ["status"]
         widgets = {"status": forms.Select(attrs={"class": "input input--compact"})}
+
+
+class AdminCourseForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = Course
+        fields = ["title", "description", "sort_order", "is_active"]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"placeholder": "Например, Аналитика данных для начинающих"}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "placeholder": "Коротко опишите, чему научится пользователь на этом курсе.",
+                }
+            ),
+            "sort_order": forms.NumberInput(attrs={"min": 1, "placeholder": "100"}),
+        }
+        labels = {
+            "title": "Название курса",
+            "description": "Описание",
+            "sort_order": "Порядок вывода",
+            "is_active": "Доступен для записи",
+        }
+        help_texts = {
+            "sort_order": "Меньшее число поднимает курс выше в списке.",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_base_styles()
+
+    def clean_title(self):
+        title = validate_no_markup(self.cleaned_data["title"], "Название курса")
+        title = " ".join(title.split())
+        if len(title) < 5:
+            raise forms.ValidationError("Название курса должно быть не короче 5 символов.")
+        return title
+
+    def clean_description(self):
+        description = self.cleaned_data.get("description", "")
+        if description:
+            description = validate_no_markup(description, "Описание")
+        return description
 
 
 class AdminDirectLoginForm(StyledFormMixin, forms.Form):
@@ -347,7 +465,7 @@ class AdminDirectLoginForm(StyledFormMixin, forms.Form):
         widget=forms.PasswordInput(attrs={"placeholder": "Служебный пароль"}),
     )
 
-    error_messages = {"invalid_login": "Неверный логин или пароль администратора."}
+    error_messages = {"invalid_login": "Неверные учетные данные администратора."}
 
     def __init__(self, request=None, *args, **kwargs):
         self.request = request
@@ -360,8 +478,19 @@ class AdminDirectLoginForm(StyledFormMixin, forms.Form):
         username = cleaned_data.get("username")
         password = cleaned_data.get("password")
         if username and password:
+            username = validate_no_markup(username.strip(), "Логин")
+            user = User.objects.filter(username__iexact=username).first()
+            if user is None:
+                raise forms.ValidationError("Администратор с таким логином не найден.")
+            if not user.is_staff:
+                raise forms.ValidationError(
+                    "Указанный пользователь не имеет прав администратора."
+                )
+            if not user.check_password(password):
+                raise forms.ValidationError("Введен неверный пароль администратора.")
+
             self.user_cache = authenticate(
-                self.request, username=username, password=password
+                self.request, username=user.username, password=password
             )
             if self.user_cache is None or not self.user_cache.is_staff:
                 raise forms.ValidationError(self.error_messages["invalid_login"])

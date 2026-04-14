@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const menuToggle = document.querySelector("[data-menu-toggle]");
     const menuPanel = document.querySelector("[data-menu-panel]");
 
@@ -47,12 +48,23 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         let timer = null;
+        const stop = () => window.clearInterval(timer);
         const reset = () => {
-            window.clearInterval(timer);
-            timer = window.setInterval(() => show(index + 1), 3000);
+            stop();
+            if (!prefersReducedMotion && !document.hidden) {
+                timer = window.setInterval(() => show(index + 1), 4000);
+            }
         };
 
         reset();
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                stop();
+            } else {
+                reset();
+            }
+        });
     });
 
     document.querySelectorAll(".flash").forEach((item) => {

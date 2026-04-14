@@ -99,16 +99,16 @@
             <div class="slider editorial-slider" data-slider>
                 <div class="slider__track">
                     <article class="slide active">
-                        <img src="{% static 'korok_net_app/images/image05.jpg' %}" alt="Команда обсуждает цифровой продукт">
+                        <img src="{% static 'korok_net_app/images/image05.jpg' %}" alt="Команда обсуждает цифровой продукт" loading="eager" fetchpriority="high" decoding="async">
                     </article>
                     <article class="slide">
-                        <img src="{% static 'korok_net_app/images/image06.jpg' %}" alt="Рабочее пространство с ноутбуком и заметками">
+                        <img src="{% static 'korok_net_app/images/image06.jpg' %}" alt="Рабочее пространство с ноутбуком и заметками" loading="lazy" decoding="async">
                     </article>
                     <article class="slide">
-                        <img src="{% static 'korok_net_app/images/image11.jpg' %}" alt="Творческая работа над интерфейсом">
+                        <img src="{% static 'korok_net_app/images/image11.jpg' %}" alt="Творческая работа над интерфейсом" loading="lazy" decoding="async">
                     </article>
                     <article class="slide">
-                        <img src="{% static 'korok_net_app/images/image17.jpeg' %}" alt="Планирование обучения и визуальных решений">
+                        <img src="{% static 'korok_net_app/images/image17.jpeg' %}" alt="Планирование обучения и визуальных решений" loading="lazy" decoding="async">
                     </article>
                 </div>
                 <button class="slider__control slider__control--prev" type="button" data-slider-prev aria-label="Предыдущий слайд">Назад</button>
@@ -124,18 +124,17 @@
             <span class="section-kicker">Программы</span>
             <h2>Выберите направление, которое подходит вашим учебным и профессиональным задачам.</h2>
             <div class="course-list">
+                {% for course in course_cards %}
                 <div class="course-card course-card--angled">
-                    <h3>Алгоритмизация и программирование</h3>
-                    <p>Подходит тем, кто хочет освоить основы логики программ, работу с алгоритмами и базовые принципы разработки.</p>
+                    <h3>{{ course.title }}</h3>
+                    <p>{{ course.description|default:"Программа открывает практические навыки и помогает уверенно двигаться от основ к прикладным задачам." }}</p>
                 </div>
+                {% empty %}
                 <div class="course-card course-card--angled">
-                    <h3>Веб-дизайн</h3>
-                    <p>Направление для изучения композиции, интерфейсов и визуального оформления цифровых продуктов.</p>
+                    <h3>Новые программы готовятся к публикации</h3>
+                    <p>Скоро здесь появятся доступные направления обучения, которые можно будет выбрать при подаче заявки.</p>
                 </div>
-                <div class="course-card course-card--angled">
-                    <h3>Проектирование баз данных</h3>
-                    <p>Курс о структуре данных, связях между сущностями и создании надёжных систем хранения информации.</p>
-                </div>
+                {% endfor %}
             </div>
         </article>
 
@@ -168,7 +167,7 @@
                 <div class="review-card__meta">
                     <div>
                         <strong>{{ review.application.author }}</strong>
-                        <span>{{ review.application.get_title_display }}</span>
+                        <span>{{ review.application.display_title }}</span>
                     </div>
                     <span class="status-pill status-pill--finished">{{ review.get_mark_display }}</span>
                 </div>
@@ -182,6 +181,23 @@
             <p>После завершения первых программ здесь появится обратная связь от пользователей.</p>
         </article>
         {% endif %}
+    </div>
+</section>
+
+<section class="section">
+    <div class="container mobile-benefits">
+        <article class="mini-feature-card">
+            <span class="section-kicker">Быстрый старт</span>
+            <h3>Форма подачи заявки адаптирована под мобильный экран и работает без лишних шагов.</h3>
+        </article>
+        <article class="mini-feature-card">
+            <span class="section-kicker">Контроль статуса</span>
+            <h3>Все обращения доступны в кабинете, где удобно проверять этап обучения с телефона.</h3>
+        </article>
+        <article class="mini-feature-card">
+            <span class="section-kicker">Обратная связь</span>
+            <h3>После завершения курса отзыв можно оставить сразу в личном кабинете без отдельного сервиса.</h3>
+        </article>
     </div>
 </section>
 
@@ -225,7 +241,39 @@
                 {% endif %}
 
                 <div class="form-grid form-grid--single">
+                    <div class="field">
+                        <span class="field-label">{{ form.title.label }}</span>
+                        {% if form.title.help_text %}
+                        <small>{{ form.title.help_text }}</small>
+                        {% endif %}
+
+                        {% if form.course_options %}
+                        <div class="course-choice-grid">
+                            {% for option in form.title %}
+                            <label class="course-choice-card" for="{{ option.id_for_label }}">
+                                {{ option.tag }}
+                                <span class="course-choice-card__content">
+                                    <span class="course-choice-card__title">{{ option.choice_label }}</span>
+                                    {% for course in form.course_options %}
+                                        {% if course.code == option.data.value %}
+                                        <span class="course-choice-card__text">{{ course.description }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        {{ form.title }}
+                        {% endif %}
+
+                        {% for error in form.title.errors %}
+                        <div class="field-error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
                     {% for field in form %}
+                    {% if field.name != 'title' %}
                     <div class="field">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
@@ -236,6 +284,7 @@
                         <div class="field-error">{{ error }}</div>
                         {% endfor %}
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
 

@@ -41,6 +41,8 @@ body {
         radial-gradient(circle at top right, rgba(244, 122, 32, 0.08), transparent 26%),
         linear-gradient(180deg, #fbf8f3 0%, #f4eee5 100%);
     font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -341,6 +343,18 @@ main {
     box-shadow: var(--shadow);
 }
 
+.hero-copy,
+.showcase-panel,
+.manifest-panel,
+.application-intro,
+.application-panel,
+.reviews-grid,
+.admin-app-grid,
+.footer-grid {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 700px;
+}
+
 .hero-copy h1 {
     margin: 0;
     max-width: none;
@@ -365,6 +379,7 @@ main {
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.88);
     box-shadow: var(--shadow);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .panel,
@@ -378,6 +393,15 @@ main {
 .application-intro,
 .media-stage {
     padding: 24px;
+}
+
+.route-card:hover,
+.course-card:hover,
+.review-card:hover,
+.mini-feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 26px 48px rgba(25, 21, 17, 0.11);
+    border-color: rgba(244, 122, 32, 0.18);
 }
 
 .panel--light,
@@ -664,6 +688,10 @@ main {
     font-weight: 700;
 }
 
+.field-label {
+    font-weight: 700;
+}
+
 .input,
 select.input,
 textarea.input {
@@ -690,6 +718,12 @@ textarea.input:focus {
     box-shadow: 0 0 0 4px rgba(244, 122, 32, 0.14);
 }
 
+.input-checkbox {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent);
+}
+
 .input.error,
 select.input.error,
 textarea.input.error {
@@ -700,6 +734,65 @@ textarea.input.error {
 .input--compact {
     min-height: 42px;
     padding: 8px 12px;
+}
+
+.course-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.course-choice-card {
+    position: relative;
+    display: block;
+    cursor: pointer;
+}
+
+.course-choice-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.course-choice-card__content {
+    display: grid;
+    gap: 10px;
+    min-height: 100%;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 240, 0.96));
+    box-shadow: 0 18px 40px rgba(25, 21, 17, 0.06);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.course-choice-card:hover .course-choice-card__content {
+    transform: translateY(-2px);
+    border-color: rgba(244, 122, 32, 0.28);
+    box-shadow: 0 22px 42px rgba(244, 122, 32, 0.12);
+}
+
+.course-choice-card__title {
+    color: var(--text-dark);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.course-choice-card__text {
+    color: var(--muted-dark);
+    line-height: 1.55;
+}
+
+.course-choice-card input[type="radio"]:checked + .course-choice-card__content,
+.course-choice-card--selected .course-choice-card__content {
+    border-color: rgba(244, 122, 32, 0.8);
+    background: linear-gradient(180deg, rgba(255, 248, 240, 1), rgba(255, 240, 226, 1));
+    box-shadow: 0 24px 46px rgba(244, 122, 32, 0.18);
+}
+
+.course-choice-card input[type="radio"]:focus-visible + .course-choice-card__content {
+    box-shadow: 0 0 0 4px rgba(244, 122, 32, 0.16);
 }
 
 .field-error,
@@ -851,6 +944,47 @@ textarea.input.error {
     margin-bottom: 28px;
 }
 
+.admin-layout--expanded {
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+    align-items: start;
+    gap: 20px;
+}
+
+.admin-panel--filters {
+    min-width: 0;
+}
+
+.admin-panel--course-form {
+    min-width: 0;
+}
+
+.admin-panel--catalog {
+    grid-column: 1 / -1;
+}
+
+.admin-catalog-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.8fr);
+    gap: 20px;
+}
+
+.admin-catalog-section {
+    min-width: 0;
+}
+
+.admin-catalog-section h3 {
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+}
+
+.course-load--catalog,
+.course-load--catalog-stats {
+    padding: 18px 20px;
+    border-radius: 22px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.75);
+}
+
 .filter-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -914,6 +1048,28 @@ textarea.input.error {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.mobile-benefits {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.mini-feature-card {
+    display: grid;
+    gap: 14px;
+    padding: 22px;
+    border-radius: 24px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: var(--shadow);
+}
+
+.mini-feature-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.45;
+}
+
 .course-load__item {
     display: flex;
     justify-content: space-between;
@@ -922,8 +1078,34 @@ textarea.input.error {
     border-bottom: 1px solid var(--line);
 }
 
+.course-load__item--stacked {
+    align-items: start;
+}
+
+.course-load__item--stacked div {
+    display: grid;
+    gap: 6px;
+}
+
+.course-load__item--stacked small {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
 .course-load__item:last-child {
     border-bottom: 0;
+}
+
+.course-load--stats {
+    margin-top: 24px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+}
+
+.course-load--catalog-stats {
+    margin-top: 0;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
 }
 
 .reviews-panel {
@@ -1012,18 +1194,21 @@ textarea.input.error {
     .auth-grid,
     .auth-grid--reverse,
     .admin-layout,
+    .admin-catalog-grid,
     .footer-grid,
     .section-split,
     .route-grid,
     .reviews-grid,
     .media-stage,
     .admin-app-grid,
-    .reviews-grid--homepage {
+    .reviews-grid--homepage,
+    .mobile-benefits {
         grid-template-columns: 1fr;
     }
 
     .form-grid,
-    .filter-grid {
+    .filter-grid,
+    .course-choice-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -1100,13 +1285,43 @@ textarea.input.error {
     .auth-promo,
     .application-intro,
     .hero-copy,
-    .media-stage {
+    .media-stage,
+    .mini-feature-card {
         padding: 18px;
         border-radius: 24px;
     }
 
+    .hero-copy {
+        gap: 18px;
+    }
+
+    .hero-text,
+    .section-lead,
+    .route-card p,
+    .course-card p,
+    .review-card p,
+    .application-intro p,
+    .mini-feature-card h3 {
+        font-size: 0.98rem;
+        line-height: 1.6;
+    }
+
+    .hero-actions,
+    .hero-strip {
+        flex-direction: column;
+    }
+
+    .hero-actions .button,
+    .hero-strip .metric-card {
+        width: 100%;
+    }
+
+    .metric-card {
+        min-width: 0;
+    }
+
     .slider__track {
-        min-height: 300px;
+        min-height: 260px;
     }
 
     .slider__control {
@@ -1131,7 +1346,24 @@ textarea.input.error {
         text-align: left;
     }
 
+    .section-split {
+        gap: 14px;
+    }
+
     .admin-table {
         min-width: 760px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
     }
 }

@@ -8,7 +8,7 @@
         <div class="section-split">
             <div>
                 <span class="section-kicker">Администрирование</span>
-                <h1>Панель для обработки заявок, изменения статусов и контроля обратной связи от пользователей.</h1>
+                <h1>Управляйте курсами, обрабатывайте заявки и контролируйте обратную связь пользователей в одном рабочем пространстве.</h1>
             </div>
         </div>
 
@@ -31,8 +31,8 @@
             </article>
         </div>
 
-        <div class="admin-layout">
-            <article class="panel panel--light">
+        <div class="admin-layout admin-layout--expanded">
+            <article class="panel panel--light admin-panel admin-panel--filters">
                 <div class="panel__header">
                     <span class="panel__label">Фильтры</span>
                     <h2>Найти нужную заявку</h2>
@@ -51,20 +51,77 @@
                 </form>
             </article>
 
-            <article class="panel">
+            <article class="panel admin-panel admin-panel--course-form">
                 <div class="panel__header">
                     <span class="panel__label">Курсы</span>
-                    <h2>Распределение заявок</h2>
+                    <h2>Добавить новый курс</h2>
                 </div>
-                <div class="course-load">
-                    {% for item in popular_courses %}
-                    <div class="course-load__item">
-                        <span>{{ item.title|title }}</span>
-                        <strong>{{ item.total }}</strong>
+                <form method="post" class="form-card form-card--light">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_course">
+
+                    {% if course_form.non_field_errors %}
+                    <div class="form-errors">
+                        {% for error in course_form.non_field_errors %}
+                        <div>{{ error }}</div>
+                        {% endfor %}
                     </div>
-                    {% empty %}
-                    <p>Пока нет данных для отображения.</p>
+                    {% endif %}
+
+                    {% for field in course_form %}
+                    <div class="field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <small>{{ field.help_text }}</small>
+                        {% endif %}
+                        {% for error in field.errors %}
+                        <div class="field-error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
                     {% endfor %}
+
+                    <button class="button button--wide" type="submit">Добавить курс</button>
+                </form>
+            </article>
+
+            <article class="panel panel--light admin-panel admin-panel--catalog">
+                <div class="panel__header">
+                    <span class="panel__label">Каталог</span>
+                    <h2>Текущие курсы и нагрузка</h2>
+                </div>
+
+                <div class="admin-catalog-grid">
+                    <section class="admin-catalog-section">
+                        <h3>Список курсов</h3>
+                        <div class="course-load course-load--catalog">
+                            {% for course in courses_catalog %}
+                            <div class="course-load__item course-load__item--stacked">
+                                <div>
+                                    <span>{{ course.title }}</span>
+                                    <small>{{ course.description|default:"Описание пока не добавлено." }}</small>
+                                </div>
+                                <strong>{% if course.is_active %}Активен{% else %}Скрыт{% endif %}</strong>
+                            </div>
+                            {% empty %}
+                            <p>Курсы еще не добавлены.</p>
+                            {% endfor %}
+                        </div>
+                    </section>
+
+                    <section class="admin-catalog-section">
+                        <h3>Статистика по заявкам</h3>
+                        <div class="course-load course-load--stats course-load--catalog-stats">
+                            {% for item in popular_courses %}
+                            <div class="course-load__item">
+                                <span>{{ item.title }}</span>
+                                <strong>{{ item.total }}</strong>
+                            </div>
+                            {% empty %}
+                            <p>Пока нет данных для отображения.</p>
+                            {% endfor %}
+                        </div>
+                    </section>
                 </div>
             </article>
         </div>
@@ -76,7 +133,7 @@
                 <div class="application-card__header">
                     <div>
                         <span class="status-pill status-pill--{{ app.status }}">{{ app.get_status_display }}</span>
-                        <h2>{{ app.get_title_display }}</h2>
+                        <h2>{{ app.display_title }}</h2>
                     </div>
                     <div class="application-meta">
                         <span>Старт: {{ app.start_at|date:"d.m.Y" }}</span>

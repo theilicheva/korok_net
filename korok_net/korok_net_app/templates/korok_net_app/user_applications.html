@@ -20,7 +20,7 @@
                 <div class="application-card__header">
                     <div>
                         <span class="status-pill status-pill--{{ app.status }}">{{ app.get_status_display }}</span>
-                        <h2>{{ app.get_title_display }}</h2>
+                        <h2>{{ app.display_title }}</h2>
                     </div>
                     <div class="application-meta">
                         <span>Старт: {{ app.start_at|date:"d.m.Y" }}</span>
